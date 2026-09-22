@@ -431,7 +431,6 @@ Commit the feature, then merge it back into `main`:
 
 ```bash
 git add class3_calculator.py
-git commit -m "Implement multiply"
 git switch main
 git merge feature/multiply
 git branch -d feature/multiply

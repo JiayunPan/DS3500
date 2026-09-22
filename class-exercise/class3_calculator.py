@@ -39,5 +39,18 @@ parser.add_argument(
     elif args.operation == "subtract":
         result = subtract(args.a, args.b)
 
+    def multiply(a, b):
+        return a * b
+
+    parser.add_argument(
+        "--operation", "-op",
+        choices=["add", "subtract", "multiply"],
+        default="add",
+        help="Operation to perform"
+    )
+
+    elif args.operation == "multiply":
+        result = multiply(args.a, args.b)
+
 if __name__ == "__main__":
     main()
