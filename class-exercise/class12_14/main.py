@@ -6,7 +6,8 @@ from pathlib import Path
 import pandas as pd
 from fastapi import FastAPI, Query, File, UploadFile, HTTPException
 
-from src import MovieInput, MovieResponse, CSVInfo, DataStorage
+from src import MovieInput, MovieResponse, CSVInfo, ProcessConfig, DataStorage
+from middleware import log_requests
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,6 +17,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Movie API")
+app.middleware("http")(log_requests)
 
 movies = {
     1: {"id": 1, "title": "Movie A", "release_year": 2020},
@@ -30,7 +32,6 @@ def health_check():
     return {"status": "ok"}
 
 
-# ---------- Class 12 demo ----------
 @app.get("/demo/movies/{movie_id}")
 def demo_get_movie(movie_id: int):
     return {"requested_id": movie_id}
@@ -58,7 +59,6 @@ def demo_add_movie_example(movie: MovieInput):
     return record
 
 
-# ---------- Class 13 demo ----------
 @app.post("/demo/inspect-csv")
 async def demo_inspect_csv(file: UploadFile = File(...)):
     contents = await file.read()
@@ -74,7 +74,20 @@ def demo_lookup_movie(movie_id: int):
     return movie
 
 
-# ---------- Class 12 TIY ----------
+@app.post("/demo/process-config")
+def demo_process_config(config: ProcessConfig):
+    df = pd.DataFrame({"title": ["Movie A", "Movie A", "Movie B", None]})
+    settings = config.model_dump()
+
+    if settings["processing"]["remove_duplicates"]:
+        df = df.drop_duplicates()
+
+    if settings["processing"]["drop_missing"]:
+        df = df.dropna()
+
+    return {"rows": len(df)}
+
+
 @app.get("/movies", response_model=list[MovieResponse])
 def list_movies(limit: int = Query(default=2, ge=1)):
     selected = list(movies.values())[:limit]
@@ -92,7 +105,6 @@ def add_movie(movie: MovieInput):
     return record
 
 
-# ---------- Class 13 TIY ----------
 @app.post("/inspect-csv", response_model=CSVInfo)
 async def inspect_csv(file: UploadFile = File(...)):
     if Path(file.filename).suffix.lower() != ".csv":
